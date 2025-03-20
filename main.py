@@ -1,128 +1,53 @@
-from pprint import pprint
-import numpy as np
+import pygame
 
-class Board:
-    
-    
-    r1 = np.array([-1, -1]) # Horizontal up left
-    r2 = np.array([0, -1]) # Up
-    r3 = np.array([1, -1]) # Horizontal up right
-    r4 = np.array([1, 0]) # right
-    
-    dirVectors = [r1, r2, r3, r4]
-    
-    
-    def __init__(self, size: int = 3, winLength: int = 3):
-        
-        self.size = size
-        self.winLength = winLength
-        
-        # Initial board for testing
-        self.board: list[list[int]] = [
-            [1, 0, 0, -1],
-            [1, 1, -1, 0],
-            [0, -1, 0, 0],
-            [0, -1, 1, 1],
-        ]
-    
-    def addSpot(self, x: int, y: int, val = 0):
-        """ Set the value in position (x, y) to val if the position is valid.
-        Turns (x, y) coordinates [1, ->] to index values [0, ->].
+from common.grid import Grid
 
-        Args:
-            x (int): The x coordinate to insert val. X-axis is horizontal, positive direction right.
-            y (int): The y coordinate to insert val. Y-axis is vertical, positive direction down.
-            val (int, optional): The value to insert at position (x, y). Defaults to 0.
-        """
-        
-        if self.board[y - 1][x - 1] == 0:
-            self.board[y - 1][x - 1] = val # Set the value at the correct index
-            return True # Valid position, value successfully changed
-        else: return False # Invalid position, value not changed.
-    
-    
-    def getValAtPos(self, x, y):
-        
-        if x <= 0 or \
-           x > self.size or \
-           y <= 0 or \
-           y > self.size:
-               
-            # x or y is out of the board
-            return 0
-        
-        else:
-            return self.board[y - 1][x - 1]
-            
-    
-    
-    def checkhasWon(self, x, y, val):
-        
-        for i, r in enumerate(self.dirVectors):
-            # Use i to calculate if there is any possibility for the diagonals to be valid (i=0, i=2) in the corners.
-            # Possible early return to save computation time over a small arithmetic calculation
-            
-            # print("new direction")
-            checkX = x
-            checkY = y
-            
-            inverted = False
-            equal = True
-            equalCount = 1 # The initial position has a valid value
-            
-            while equal:
+from TicTacToeGame.structs import Board, GhostShape, generateCombinationMap
+from TicTacToeGame.loops import gameplayLoop, gameOverLoop
+from TicTacToeGame.setup import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, GRID_BORDER_WIDTH, GRID_CELLS_X, GRID_CELLS_Y, INIT_PLAYER, INIT_PLAYER_X, INIT_PLAYER_Y, INIT_LENGTH, INIT_COLOR, INIT_DIR, TEXTURE_PACK, GRID_PADDING_X, GRID_PADDING_TOP, GRID_PADDING_BOTTOM, CELL_SIZE, WIN_LENGTH, MAX_WIN_LENGTH
 
-                # print("r:", r)
-                
-                checkX += r[0]
-                checkY += r[1]
-                
-                valAtCheck = self.getValAtPos(checkX, checkY)
-                equal = valAtCheck == val
-                # print("(", checkX, checkY, "):", valAtCheck, equal)
-                
-                if equal: equalCount += 1
-                else:
-                    if inverted: continue
-                    
-                    # Invert the searching direction and start searching form original position
-                    # print("inverted search")
-                    inverted = True
-                    r *= -1
-                    checkX = x
-                    checkY = y
-                    equal = True
-                    
-                if equalCount == self.winLength: return True # player has won
-                
-                # print("count:", equalCount)    
 
-      
-        
-        # For-loop never found a winning case, so player did not win
-        return False
-        
+# pygame
+
+pygame.display.set_caption("Tic Tac Toe")
+
+clock = pygame.time.Clock()
+window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
+initPlayer = INIT_PLAYER
+winLength = WIN_LENGTH
+numCellsX = GRID_CELLS_X
+numCellsY = GRID_CELLS_Y
+
+
+while True:
+    CELL_SIZE_PX = min((WINDOW_WIDTH - GRID_PADDING_X*2) // GRID_CELLS_X, (WINDOW_HEIGHT - GRID_PADDING_TOP - GRID_PADDING_BOTTOM) // numCellsY)
+    
+    
+    totalCombinations = generateCombinationMap(xCells=numCellsX, yCells=numCellsY, winLength=winLength)
 
     
-    def __str__(self):
-        return str(self.board)
+    windowPosX = (WINDOW_WIDTH - numCellsX * CELL_SIZE_PX + 2 * GRID_BORDER_WIDTH) / 2 # Center the grid on the window in the X direction
+    grid = Grid(windowPosX, GRID_PADDING_TOP, numCellsX, numCellsY, CELL_SIZE_PX)
+    board = Board(grid, TEXTURE_PACK, winLength, INIT_PLAYER, totalCombinations)
+    ghostShape = GhostShape(CELL_SIZE_PX, initPlayer, TEXTURE_PACK)
+    result = gameplayLoop(window, grid, board, ghostShape, initPlayer, clock)
     
-    
-    def print(self):
-        for yList in self.board:
-            print(yList)
-    
-    
+    if result != 0:
+        # numCellsX += 1
+        # numCellsY += 1
+        # winLength = min((numCellsX-1) // 2 + 1, numCellsX - 1) + 1 # regulate the win length based on the grid size in the X direction.
+        initPlayer = result # The winner starts the next game
+    else:
+        initPlayer = INIT_PLAYER
+        winLength = WIN_LENGTH
+        numCellsX = GRID_CELLS_X
+        numCellsY = GRID_CELLS_Y
         
-board = Board(4, 4)
+    
+    gameOverLoop(window, True, clock, result)
 
-newPosX = 2
-newPosY = 1
-newVal = -1
 
-board.print()
-print(board.addSpot(newPosX, newPosY, newVal))
 
-board.print()
+pygame.quit()
 
-print(board.checkhasWon(newPosX, newPosY, newVal))

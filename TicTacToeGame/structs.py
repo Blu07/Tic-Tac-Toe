@@ -2,118 +2,10 @@ from pprint import pprint
 import numpy as np
 import pygame
 from pygame import Vector2
-import copy
+from copy import copy, deepcopy
 
-from setup import GHOST_SHAPE_SIZE_FACTOR
-
-
-class Grid:
-    
-    borderWidthPX: int = 4
-    colors = ["burlywood2", "burlywood3"]
-    
-    
-    def __init__(self, windowPosX, windowPosY, cellSizePX, numCellsX: int = 3, numCellsY: int = 3):
-        
-        self.windowPosX = windowPosX
-        self.windowPosY = windowPosY
-        self.numCellsX = numCellsX
-        self.numCellsY = numCellsY
-        self.cellSizePX = cellSizePX
-        
-        self.color = 'black'
-        
-        # Alternating grid of 1's and 0's to display the two colors
-        self.grid = [[(x+y)%2 for x in range(numCellsX)] for y in range(numCellsY)]
-        
-        # The grid surface size includes the border, so add twice the border width (left + right, or top + bottom)
-        surfaceWidth = numCellsX * cellSizePX + 2 * self.borderWidthPX
-        surfaceHeight = numCellsY * cellSizePX + 2 * self.borderWidthPX
-        
-        
-        # The gridSurface will be the background texture of the window.
-        # Draw it once and re-use every frame
-        self.gridSurface = pygame.Surface((surfaceWidth, surfaceHeight))
-        self.drawGrid()
-        
-    
-    
-    def isOutOfBounds(self, action: Vector2):
-        """Check if a given position (Vector2) is outside the grid"""
-        return action.x < 0 or action.x >= self.numCellsX or action.y < 0 or action.y >= self.numCellsY
-
-    
-    
-    
-    def drawGrid(self):
-        """ Draws the grid onto the gridSurface, to be reused every frame. """
-        # Draw the border around the grid
-        gridWidth = self.cellSizePX * self.numCellsX
-        gridHeight = self.cellSizePX * self.numCellsY
-        
-        # The grid's total area includes the border, so draw the border at (0, 0) on the gridSurface
-        borderRect = (0, 0, gridWidth + 2 * self.borderWidthPX, gridHeight + 2 * self.borderWidthPX)
-        pygame.draw.rect(self.gridSurface, self.color, borderRect, self.borderWidthPX)
-        
-        # Draw the alternating grid colors
-        for y, xList in enumerate(self.grid):
-            for x, num in enumerate(xList):
-                color = self.colors[num]
-                rect = self.getRectFromGridPos(Vector2(x, y))  # This rect is relative to gridSurface
-                pygame.draw.rect(self.gridSurface, color, rect)
-    
-    
-    def getRectFromGridPos(self, gridPos: Vector2) -> set:
-        """
-        Returns the rectangle coordinates on the window corresponding to the given grid position.
-        
-        Args:
-            gridPos (Vector2): The grid position (x, y) for which to calculate the rectangle coordinates.
-        
-        Returns:
-            rect (pygame.Rect): A set containing the rectangle coordinates (windowX, windowY, width, height).
-        """
-
-        windowX = self.cellSizePX * gridPos.x + self.borderWidthPX  # Offset by borderWidth
-        windowY = self.cellSizePX * gridPos.y + self.borderWidthPX  # Offset by borderWidth
-        return pygame.Rect(windowX, windowY, self.cellSizePX, self.cellSizePX)
-
-    
-    def getGridPosFromWindowPos(self, windowPos: Vector2) -> Vector2:
-        """
-        Converts a window position to a grid position.
-        Args:
-            windowPos (Vector2): The window position to convert.
-        Returns:
-            Vector2: The corresponding grid position.
-        """
-        
-        gridX = (windowPos.x - self.windowPosX - self.borderWidthPX) // self.cellSizePX
-        gridY = (windowPos.y - self.windowPosY - self.borderWidthPX) // self.cellSizePX
-        gridPos = Vector2(gridX, gridY)
-        
-        return gridPos
-    
-    def getWindowPosFromGridPos(self, gridPos: Vector2) -> Vector2:
-        """
-        Converts a grid position to a window position.
-        Args:
-            gridPos (Vector2): The grid position to convert.
-        Returns:
-            Vector2: The corresponding window position.
-        """
-        
-        windowX: int = self.windowPosX + self.cellSizePX * gridPos.x + self.borderWidthPX
-        windowY: int = self.windowPosY + self.cellSizePX * gridPos.y + self.borderWidthPX
-        windowPos: Vector2 = Vector2(windowX, windowY)
-        
-        return windowPos
-    
-    
-    def draw(self, window: pygame.Surface):
-        """ Blits the pre-drawn gridSurface onto the window at the correct position. """
-        window.blit(self.gridSurface, (self.windowPosX, self.windowPosY))
-
+from .setup import GHOST_SHAPE_SIZE_FACTOR, DEPTH
+from common.grid import Grid
 
 
 class Board:
@@ -139,52 +31,52 @@ class Board:
         
 
     def checkHasWon(self, action: Vector2, player: int, state = None):
+        """Check if the player has won the game by performing the action.
+        This function checks for winning conditions only where the action is included.
+        Args:
+            action (Vector2): The position where the player has made their move.
+            player (int): The player identifier (e.g., 1 or 2).
+            state (optional): The current state of the game board. If not provided, the function will use the instance's state.
+        Returns:
+            bool: True if the player has won the game, False otherwise.
+        """
         
         if state is None: state = self.state
         
         for i, r in enumerate(self.dirVectors):
             # TODO: Use i to calculate if there is any possibility for the diagonals to be valid (i=0, i=2) in the corners.
             # Possible early return to save computation time over a small arithmetic calculation
+                     
+            inverted = False # Flag to only invert once
+            equal = True # Store if each checked cell has the same value as the player's value
+            equalCount = 1 # The player has won if this count is the same as winlength
             
-            # print("new direction")            
-            checkPos = Vector2([action.x, action.y])
-            
-            inverted = False
-            equal = True
-            equalCount = 1 # The initial position has a valid value
+            checkPos = deepcopy(action)
             
             while equal:
-
-                # print("r:", r)
-                checkPos += r
+                checkPos += r # Add the relative direction vector to the current position
                 
-                valAtCheck = self.getValAtPos(checkPos, state)
-                equal = valAtCheck == player
+                valueAtCheck = self.getValAtPos(checkPos, state)
+                equal = valueAtCheck == player
 
-                # print("(", checkX, checkY, "):", valAtCheck, equal)
-                
                 if equal: equalCount += 1
                 else:
                     if inverted: continue
                     
                     # Invert the searching direction and start searching form original position
-                    # print("inverted search")
-                    inverted = True
+                    checkPos = deepcopy(action)
                     r *= -1
-                    checkPos = Vector2([action.x, action.y])
+                    inverted = True
                     equal = True
                     
                 if equalCount == self.winLength: return True # player has won
-                
-                # print("count:", equalCount)    
-
-      
+                      
         
         # For-loop never found a winning case, so player did not win
         return False
     
     
-    def performAction(self, action: Vector2, player = 0, state = None) -> list[list[int]]:
+    def performAction(self, action: Vector2, player = 0) -> list[list[int]]:
         """ Perform an action on the board.
         Parameters:
         - action (Vector2): The position to add the player's value.
@@ -193,22 +85,18 @@ class Board:
         - bool: True if the action was successful, False otherwise.
         """
         
-        if state is None:
-            state = self.state
-        else:
-            state = copy.deepcopy(state)
+
             
         success = False # Change to true if the action was successful
         
-        valueAtCell = self.getValAtPos(action, state)
+        valueAtCell = self.getValAtPos(action, self.state)
         outOfBounds = self.grid.isOutOfBounds(action)
         
         if not outOfBounds and valueAtCell == 0:
-            state[int(action.y)][int(action.x)] = player # Set the value at the correct index
-            self.state = state
+            self.state[int(action.y)][int(action.x)] = player # Set the value at the correct index
             success = True
         
-        return state, success # Previous state, value not changed
+        return success # Return whether the action was successful or not
     
     
     
@@ -223,7 +111,13 @@ class Board:
         # maxX = xCells // 2 + 1 (include middle column if xCells is odd)
         # maxY = yCells // 2 + 1 (include middle row)
         
-        
+        # TODO: Sort the list of actions based on win conditions
+            # If the player can win, return that action
+            # If the opponent can win, return that action
+            # If there is a blocking move, return that action
+            # If there is a move that creates a fork, return that action
+            # If there is a move where the opponent can create a fork, return that action
+            
         
         
         if state is None: state = self.state
@@ -231,9 +125,16 @@ class Board:
         actions = []
         for y, yList in enumerate(state):
             for x, val in enumerate(yList):
-                action = Vector2(int(x), int(y))
+                action = Vector2(x, y)
                 if val == 0:
                     actions.append(Vector2(action))
+                
+                # There is a value at the current position:
+                # store the position and value
+                
+                
+        
+                
         
         return actions
     
@@ -253,12 +154,6 @@ class Board:
         return True
     
     
-    def getPlayer(self, state):
-
-        summed = sum(np.array(state).flatten())
-        return self.startPlayer if summed == 0 else -self.startPlayer
-    
-    
     
     def Result(self, state, action, playerVal):
         
@@ -275,98 +170,81 @@ class Board:
         
         return newState
     
-    def Actions(self, state):
-        return self.getActions(state)
-    
-    def Player(self, state):
-        return self.getPlayer(state)
-    
           
-    def minimax(self, s, player):
-        
-        actions = self.Actions(s)
-        
-        
-        # if player == MAX:
-        
-        value = -np.inf * player
-
-        for a in actions:
-            checkState = self.Result(s, a, player)
-                
-            immidiateWin = self.checkHasWon(a, player, checkState)
-            isDraw = self.isStateFull(checkState)
-            
-            if immidiateWin: return player
-            if isDraw: return 0
-
-            newValue = self.minimax(s = checkState, player = -player)
-            
-            if player == 1: value = max(value, newValue)
-            elif player == -1: value = min(value, newValue)
-                
-        return value
-        
-        # if player == MIN:
-        #     value = np.inf
-        #     values = [value]
-        #     for a in actions:
-        #         print("\t"*tabs, "Action:", a)
-        #         checkState = self.Result(s, a, player)
-
-                    
-        #         immidiateWin = self.checkHasWon(a, MIN, checkState)
-        #         if immidiateWin:
-        #             print("\t"*tabs, 'MIN won')
-        #             return MIN
-        #         if self.isStateFull(checkState):
-        #             print("\t"*tabs, 'Draw')
-        #             return 0
-
-        #         newValue = self.minimax(s = checkState, player = MAX, tabs=tabs+1)
-        #         values.append(newValue)
-        #         value = min(value, newValue)
-        #         print("\t"*tabs, 'MIN', value, values)
-                
-        #     return value
-        
-    
-    
-    def getBestAction(self, state, player):        
-        state = copy.deepcopy(state)
-        actions = self.getActions(state)
-        # actions = [Vector2(2, 0)]
-        
-        print("finding the best action for player ", player)
-        print("on state:", np.array(state).flatten())
-        
-        
-        bestValue = -player * np.inf  # Opposite of player's goal
+    def minimax(self, state, player, depth=10, alpha=-np.inf, beta=np.inf, root=False):
+        bestValue = -np.inf * player # The opposite of the player's goal
         bestAction = None
         
-        values = []
-
+        actions = self.getActions(state)
         for action in actions:
-            newState = self.Result(state, action, player)
-            print("checking action:", action, "with state:")
-            for yList in newState:
-                print(yList)
-            
-            value = self.minimax(newState, -player)
-            
-            bestValue = max(bestValue, value) if player == 1 else min(bestValue, value)
-            
-            print("Value:", value, "for action:", action)
-            values.append(value)
 
-
-            bestAction = actions[values.index(bestValue)]
+            checkState = self.Result(state, action, player)
+                
+            immidiateWin = self.checkHasWon(action, player, checkState)
+            isDraw = self.isStateFull(checkState)
+            
+            # Check:
+            # 1. the player has won,
+            # 2. the game is a draw,
+            # 3. the depth is 0,
+            # 4. the game is not over, continue the search
+            if immidiateWin: bestValue, bestAction = player, action
+            elif isDraw: bestValue, bestAction = 0, action
+            elif depth == 0: bestValue, bestAction = self.evaluateState(checkState), action
+            else:
+                otherPlayer = -player
+                newValue = self.minimax(state=checkState, player=otherPlayer, depth=depth-1, alpha=alpha, beta=beta)
+                
+                if player == 1 and newValue > bestValue:
+                    bestValue = newValue
+                    bestAction = action
+                    alpha = max(alpha, newValue)
+                    
+                elif player == -1 and newValue < bestValue:
+                    bestValue = newValue
+                    bestAction = action
+                    beta = min(beta, newValue)
+                
+                if beta <= alpha: break
+            
+            
+        if root: return bestAction # Return the best action because minimax was called at the top level
+        else: return bestValue # Return the value of the state because minimax was called at a lower level
+            
+    
+    def getBestAction(self, state, player, depth=10):        
+        state = deepcopy(state)
         
-        print("Values:", values)
-        print("Actions:", actions)
-        print(f"Best value: {bestValue}, Best action: {bestAction}")
-        
+        bestAction = self.minimax(state, player, depth=depth, root=True)
+        print(bestAction)
         return bestAction
+
+        # bestValue = -player * np.inf  # Opposite of player's goal
+        # bestAction = None
+        # bestActions = []
+        
+        # values = []
+        
+        # otherPlayer = -player
+
+        # actions = self.getActions(state)
+        # for action in actions:
+        #     newState = self.Result(state, action, player)
+            
+        #     if self.checkHasWon(action, player, newState): return action
+        #     if self.isStateFull(newState): return action
+            
+        #     value, bestActions = self.minimax(newState, otherPlayer, depth=depth)
+        #     print(bestActions)
+        #     if player == 1:     bestValue = max(bestValue, value)
+        #     elif player == -1:  bestValue = min(bestValue, value)
+            
+        #     values.append(value)
+
+        #     bestAction = actions[values.index(bestValue)]
+        
+        
+        # return bestAction
 
 
 
@@ -492,11 +370,11 @@ if __name__ == '__main__':
     
     startPlayer = -1
     
-    state = [
-        [ 1,  0,  0],
-        [ 0, 0,  0],
-        [ 0,  0,  0]
-    ]
+    # state = [
+    #     [ 1,  0,  0],
+    #     [ 0, 0,  0],
+    #     [ 0,  0,  0]
+    # ]
     
     xCells = 3
     yCells = 3
@@ -511,7 +389,7 @@ if __name__ == '__main__':
     cellSize = 200 
             
     grid = Grid(0, 0, cellSize, xCells, yCells)
-    board = Board(grid, None, 3, startPlayer, totalCombinations, state)
+    board = Board(grid, None, 3, startPlayer, totalCombinations)
     
     # Depth at sizes that are fast enough
     # X, Y, WinLen: Depth
@@ -539,9 +417,8 @@ if __name__ == '__main__':
     # Let Minimax decide the first move
     
     
-    bestAction = board.getBestAction(board.state, startPlayer)
-
-    # bestValue = board.minimax(board.state, depth)
+    bestAction = board.minimax(board.state, startPlayer, depth=depth, root=True)
+    print(bestAction)
     
     # print(f"{bestValue}, ({bestAction.x}, {bestAction.y})")
     # winner = "Draw" if bestValue == 0 else "X" if bestValue > 0 else "O"
