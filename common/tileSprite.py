@@ -1,8 +1,6 @@
 import pygame
 from pygame.math import Vector2
-
 from common.utils import vec2Deg
-
 
 class TileSprite(pygame.sprite.Sprite):
     """A sprite representing a tile on the grid.
@@ -43,14 +41,16 @@ class TileSprite(pygame.sprite.Sprite):
         else:
             self.image = self.texture
 
+
         # Get the rect of the image
         self.rect = self.image.get_rect(topleft=self.topleft)
 
 
     def updatePos(self, pos):
         self.pos = pos
-        self.topleft = self.grid.getScreenPosFromGridPos(pos)
+        self.topleft = self.grid.getWindowPosFromGridPos(pos)
         self.rect = self.image.get_rect(topleft=self.topleft)
+        
     
     def updateStyle(self, style):
         self.style = style
@@ -92,3 +92,6 @@ class TileSprite(pygame.sprite.Sprite):
     
     def __str__(self):
         return f"TileSprite({self.style}, {self.pos}, {self.rotation})"
+
+
+

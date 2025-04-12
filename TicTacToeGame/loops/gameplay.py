@@ -1,15 +1,17 @@
 import pygame
 from pygame.math import Vector2
 import sys
-import numpy as np
 
-from copy import deepcopy
+from common.ui_elements import Text
+from common.setup import FPS, GAMEPLAY_BG_COLOR
 
-from ..ui_elements import ScoreText
-from TicTacToeGame.setup import FPS, GP_BACKGROUND_COLOR, DEPTH
-from TicTacToeGame.structs import Grid, Board, GhostShape
+from TicTacToeGame.setup import HUMAN_THINKING_TEXT, AI_THINKING_TEXT
+from TicTacToeGame.structs import Grid, Board, AIPlayer, HumanPlayer
 
-def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, ghostShape: GhostShape, initPlayer: int, clock: pygame.time.Clock) -> bool:
+
+    
+
+def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, initPlayer: int, players, clock: pygame.time.Clock) -> bool:
     """
     Main gameplay loop for Tic Tac Toe.
     Args:
@@ -20,93 +22,92 @@ def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, ghostShape: G
         bool: False when gameplay has ended (e.g., when the snake crashes).
     """
     
-
-    SCORE_FONT = pygame.font.Font(None, 34)
-    scoreColor = "blue"
-    scoreText = ScoreText(screen=window, font=SCORE_FONT, color=scoreColor)
     
     currentPlayer = initPlayer
     
+    currentPlayerText = Text(
+        window,
+        text = f"Current Player: {"X" if currentPlayer == 1 else "O"}",
+        font = pygame.font.Font(None, 60),
+        color = "black",
+        center = Vector2(window.get_width() // 2, 100)
+    )
+    
+    currentPlayerDescription = Text(
+        window,
+        text = HUMAN_THINKING_TEXT if players[currentPlayer] == "Human" else AI_THINKING_TEXT,
+        font = pygame.font.Font(None, 24),
+        color = "black",
+        center = Vector2(window.get_width() // 2, 140)
+    )
+    
+    AICooldownFrames = 5 # Hard wait for AI to start. Used to ensure screen draws before AI starts thinking 
+    
     winner = None
     terminal = False
-    
-    
 
+    lastAIMoveTime = 0
 
     while not terminal:
+
+        AICooldownFrames -= 1
         
-        # event handling
+        currentPlayerType = players[currentPlayer]
+        validMove = False
+    
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminal = True
                 pygame.quit()
                 sys.exit()
-                
             
-            
-            ## Player Input
-            if currentPlayer == 1:
-                if event.type == pygame.MOUSEMOTION:
-                    # Update the position of the ghost shape to the mouse position
-                    ghostShape.setPos(Vector2(event.pos))
+            # Player is human and made a move by clicking
+            if currentPlayerType == "Human" and event.type == pygame.MOUSEBUTTONDOWN:
+                validMove, didWin = HumanPlayer(event, currentPlayer, grid, board)
                 
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    action = grid.getGridPosFromWindowPos(Vector2(event.pos))
-                    
-                    validMove = board.performAction(action, currentPlayer) # No need to store the new state, as it is already stored in the board object
-                    if not validMove: continue # Skip the rest because nothing should change
-
-                    didWin = board.checkHasWon(action, currentPlayer)
-                    
-                    if didWin:
-                        winner = currentPlayer
-                        terminal = True
-                    
-    
-                    
-                    currentPlayer = -currentPlayer # Switch player between 1 and -1
-                    ghostShape.player = currentPlayer
-                    
-                    break
+        
+        # Player is AI and should make a move regardless of the event  
+        if currentPlayerType == "AI" and AICooldownFrames <= 0:
+            validMove, didWin = AIPlayer(board, currentPlayer, lastMoveTime=lastAIMoveTime)
+            lastAIMoveTime = pygame.time.get_ticks()
+            AICooldownFrames = 5 # Reset
             
+        
+        # If a valid move was made this frame, check for win or draw
+        if validMove:
+            # Draw
+            if board.isStateFull():
+                terminal = True
+                winner = 0
+
+            # Win
+            elif didWin:
+                winner = currentPlayer
+                terminal = True
             
-            if currentPlayer == -1:
-                    
-                bestAction = board.minimax(board.state, -1, depth=DEPTH, root=True)
-
-                # bestAction = board.getBestAction(board.state, -1, DEPTH)
-                if bestAction is None:
-                    winner = 0
-                    terminal = True
-                    break
-                    
-                board.performAction(bestAction, currentPlayer) # No need to know if the move was valid, as the AI always makes a valid move. State is already stored in the board object
-
-                didWin = board.checkHasWon(bestAction, currentPlayer)
+            # Nothing, continue game
+            else:
+                # Switch player between 1 and -1
+                currentPlayer = -currentPlayer
+                currentPlayerText.updateText(f"Current Player: {"X" if currentPlayer == 1 else "O"}")
+                currentPlayerDescription.updateText(HUMAN_THINKING_TEXT if players[currentPlayer] == "Human" else AI_THINKING_TEXT)
                 
-                if didWin:
-                    winner = currentPlayer
-                    terminal = True
-                 
+        
                 
-                currentPlayer = -currentPlayer # Switch player between 1 and -1
-                ghostShape.player = currentPlayer
+        # Render the screen before processing events, so that
+        window.fill(GAMEPLAY_BG_COLOR)
 
-            
-        # Render the screen with all elements, every frame.
-        window.fill(GP_BACKGROUND_COLOR)
-
-        scoreText.draw(3)
+        currentPlayerText.draw()
+        currentPlayerDescription.draw()
         
         grid.draw(window)
         board.draw(window)
-        ghostShape.draw(window)
 
         pygame.display.flip()
+
         
         # Cap the frame rate to FPS
         clock.tick(FPS)
     
-    # Return False when gameplay has ended (crashed etc.) 
+    
     return winner

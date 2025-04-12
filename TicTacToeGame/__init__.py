@@ -1,5 +1,3 @@
-# Folders
-import snakeGame.loops
-
+from .loops import *
 
 __all__ = ["loops", "structs", "setup"]

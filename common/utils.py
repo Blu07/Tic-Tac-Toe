@@ -102,6 +102,29 @@ def deg2Vec(rotation: int) -> Vector2:
     if rotation == 270:
         return LEFT
 
+def dir2Vec(direction: str) -> Vector2:
+    """Converts a direction string into a 2D vector.
+
+    Parameters:
+        direction (str): A string representing a direction (e.g., "up", "down", "left", "right").
+
+    Returns:
+        Vector2: The corresponding 2D vector.
+    """
+    
+    UP    = Vector2(0, -1)
+    DOWN  = Vector2(0, 1)
+    LEFT  = Vector2(-1, 0)
+    RIGHT = Vector2(1, 0)
+    
+    if direction == "up":
+        return UP
+    if direction == "down":
+        return DOWN
+    if direction == "left":
+        return LEFT
+    if direction == "right":
+        return RIGHT
 
 def getRelativeTurn(dir1: Vector2, dir2: Vector2):
     
@@ -131,14 +154,17 @@ def loadTexture(file_name: str, size=None) -> pygame.Surface | None:
     try:
         texture = pygame.image.load(os.path.join(TEXTURES_FOLDER, file_name)).convert_alpha()
         if size:
+            if isinstance(size, int):
+                size = (size, size)
             texture = pygame.transform.scale(texture, size)
+        
         return texture
     except pygame.error as e:
         print(f"Failed to load texture {file_name}: {e}")
         return None
 
 
-def loadTextures(size: tuple[int, int], texturePack:str, fileNames:list=None) -> dict:
+def loadTextures(size: tuple[int, int], texturePack: str, fileNames: list = None) -> dict:
     """Load textures based on a list of file names and a size.
 
     Parameters:
@@ -180,12 +206,12 @@ def distanceMap(map: list[list[int]]):
     obstacle cell.
 
     Args:
-        map (list[list[int]]): A 2D array of cells with integer values 0 or 1. 0 is an open cell, 1 is an obstacle cell.
+        map (list[list[int]]): A 2D array of cells with integer values 0 or 1. 0 is an open cell, any other value is an obstacle cell.
 
     Returns:
         list[list[int]]: A 2D array of cells with integer values representing the distance from each cell to the nearest obstacle cell.
     """
-    
+    print("used distMap")
     # Create a new map with the same size as the input map, initialized with infinity. The algortihm chooses lower values
     # for the cells, so infinity will always be replaced.
     distMap = [[float('inf') for _ in range(len(map[0]))] for _ in range(len(map))]
@@ -199,7 +225,7 @@ def distanceMap(map: list[list[int]]):
     # first, set the distance to 0 for all cells that are obstacles
     for y in range(len(map)):
         for x in range(len(map[0])):
-            if map[y][x] == 1:
+            if map[y][x] != 0:
                 distMap[y][x] = 0
     
     i = 0

@@ -1,12 +1,13 @@
 import pygame
-from pygame.math import Vector2
+from pygame.font import Font
 import sys
 import numpy as np
 
-from common.utils import getNextDirection
-from snakeGame.ui_elements import ScoreText
+from common.utils import getNextDirection, dir2Vec
+from common.ui_elements import ScoreText
+from common.setup import FPS, GAMEPLAY_BG_COLOR
 
-from snakeGame.setup import FPS, TPS, GP_BACKGROUND_COLOR
+from snakeGame.setup import TPS
 
 def gameplayLoop(window: pygame.Surface, loop: bool, snake, grid, foodList, hotSpotList, clock: pygame.time.Clock) -> bool:
     """
@@ -19,25 +20,25 @@ def gameplayLoop(window: pygame.Surface, loop: bool, snake, grid, foodList, hotS
         bool: False when gameplay has ended (e.g., when the snake crashes).
     """
     
-    gameTPS = TPS
-
     # Game Event timing (Ticks)
+    gameTPS = TPS
     timeStep = 1000 / gameTPS
     lastUpdateTime = pygame.time.get_ticks()
     deltaTime = timeStep
     
 
-    direction = Vector2(1, 0) # Initial direction: right
-    dQueue = [direction]
+    direction = dir2Vec("right")
+    dQueue = [direction] # Direction queue for snake movement.
     won = False
     
     foodList.newRandomFood(snake, hotSpotList)
     
     
-    SCORE_FONT = pygame.font.Font(None, 34)
-    scoreColor = "blue"
-    scoreText = ScoreText(screen=window, font=SCORE_FONT, color=scoreColor)
-    
+    scoreText = ScoreText(
+        window,
+        font = Font(None, 34),
+        color = "blue"
+    )
     
     wasGraceMove = False
 
@@ -89,7 +90,7 @@ def gameplayLoop(window: pygame.Surface, loop: bool, snake, grid, foodList, hotS
         timeStep = 1000 / gameTPS
 
         # Render the screen with all elements, every frame.
-        window.fill(GP_BACKGROUND_COLOR)
+        window.fill(GAMEPLAY_BG_COLOR)
 
         scoreText.draw(snake.score)
         

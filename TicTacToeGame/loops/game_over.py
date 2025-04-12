@@ -1,9 +1,10 @@
 import pygame
 from pygame.math import Vector2
+from pygame.font import Font
 import sys
 
-from ..ui_elements import Button, Text
-from TicTacToeGame.setup import FPS, GO_BG_COLOR, GO_TITLE, TEXTURE_PACK, GO_TITLE_COLOR, GO_TITLE_FONT, GO_RESTART_BUTTON_TEXT, GO_RESTART_BUTTON_FONT, GO_RESTART_BUTTON_COLOR, GO_RESTART_BUTTON_TEXT_COLOR, GO_RESTART_BUTTON_PADDING
+from common.ui_elements import Button, Text
+from common.setup import CENTER, FPS
 
 def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock, winner: str) -> bool:
     """
@@ -16,33 +17,47 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock, w
     - bool: False when the game over loop has ended.
     """
     
-    GO_TITLE_CENTER = Vector2(window.get_width() // 2, 100)
-    GO_RESTART_BUTTON_CENTER = Vector2(window.get_width() // 2, window.get_height() // 2)
 
-    if winner == 0: titleText = "It's a draw!"
-    else: titleText = f"{TEXTURE_PACK[winner]} won!"
+    if winner == 0:
+        titleText = "It's a draw!"
+    else:
+        player = "X" if winner == 1 else "O"
+        titleText = f"{player} won!"
+
+    pygame.display.set_caption(titleText)
 
     
     # Initialize UI Elements
-    titleText = Text(window, GO_TITLE_FONT, titleText, GO_TITLE_COLOR, center=GO_TITLE_CENTER)
-    restartButton = Button(window, GO_RESTART_BUTTON_TEXT, GO_RESTART_BUTTON_FONT, GO_RESTART_BUTTON_COLOR, GO_RESTART_BUTTON_TEXT_COLOR, center=GO_RESTART_BUTTON_CENTER, padding=GO_RESTART_BUTTON_PADDING)
+    titleText = Text(
+        window,
+        "You Died!",
+        font = Font(None, 100),
+        color = "blue",
+        center = CENTER + Vector2(0, -100)
+    )
+    
+    restartButton = Button(
+        window,
+        "Click to Restart Game",
+        font = Font(None, 24),
+        bgColor = (0, 128, 255),
+        textColor = "white",
+        center = CENTER,
+        padding = Vector2(50, 30)
+    )
 
     
     # Game Over Screen Loop
     while loop:
-        
         events = pygame.event.get()
-        
         for event in events:
             match event.type:
                 case pygame.QUIT:
-                    pygame.quit()
+                    pygame.quit(),
                     sys.exit()
                     
                 case pygame.MOUSEBUTTONDOWN:
-                    pass
-                    mousePos = Vector2(pygame.mouse.get_pos())
-                    if restartButton.pressed(mousePos):
+                    if restartButton.isPressed(event.pos):
                         loop = False
                 
                 case pygame.KEYDOWN:
@@ -51,8 +66,6 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock, w
                 case _:
                     pass
         
-        # Fill the screen with the background color
-        window.fill(GO_BG_COLOR)
         
         # Render Screen  
         restartButton.draw()

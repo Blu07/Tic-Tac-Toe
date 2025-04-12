@@ -11,10 +11,9 @@ class ScoreText:
         Initializes a Score text object.
 
         Args:
-            text (str): The text to be displayed.
+            screen (pygame.Surface): The game window surface.
             font (pygame.font.Font): The font used for the text.
             color (tuple): The color of the text in RGB format.
-            screen (pygame.Surface): The game window surface.
         """
         
         self.font = font

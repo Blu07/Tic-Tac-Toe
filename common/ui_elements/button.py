@@ -4,7 +4,7 @@ from pygame.math import Vector2
 from .text import Text
 
 class Button:
-    def __init__(self, screen, text, font, bgColor, text_color, center=None, padding: Vector2 = None, width: int = None, height: int = None):
+    def __init__(self, screen, text, font, bgColor, textColor, center=None, padding: Vector2 = None, width: int = None, height: int = None):
         """
         Initializes a Button object. Draws arectangle with text on top of it.
         
@@ -13,7 +13,7 @@ class Button:
             text: The text to display on the button.
             font: The font to use for the button text.
             bgColor: The background color of the button.
-            text_color: The color of the button text.
+            textColor: The color of the button text.
             center: The center position of the button. If None, the button will be centered at (0, 0).
             padding: The padding to add to the button dimensions. If None, no padding will be added.
             width: The width of the button. If None, the width will be determined by the text width.
@@ -23,15 +23,15 @@ class Button:
         self.screen = screen
         self.font = font
         self.bgColor = bgColor
-        self.textColor = text_color
+        self.textColor = textColor
         
 
         # Create a Text object to display the text on the button
         if center:
-            self.text = Text(screen, font, text, text_color, bgColor, center=center)
+            self.text = Text(screen, text, font, textColor, bgColor, center=center)
         else:
             center = Vector2(0, 0)
-            self.text = Text(screen, font, text, text_color, bgColor, center=center)
+            self.text = Text(screen, text, font, textColor, bgColor, center=center)
         
         
         # Create a rectangle for the button
@@ -57,7 +57,28 @@ class Button:
         self.text.draw()
         
 
-    def pressed(self, pos):
+    def isPressed(self, pos):
         """Check if the position (pos) is within the bounding box of the button.
         """
         return self.rect.collidepoint(pos)
+
+
+class SettingButton(Button):
+    def __init__(self, window, text, font, color, textColor, center, padding, clickFunc,  settingKey, settingText):
+        super().__init__(window, text, font, color, textColor, center=center, padding=padding)
+        self.clickFunc = clickFunc
+        self.settingText = settingText
+        self.settingKey = settingKey
+    
+    def click(self, settings):
+        """Update the settings based on the button clicked.
+
+        Args:
+            settings (dict): The current settings dictionary.
+        """
+        self.clickFunc(settings)
+        self.settingText.updateValue(settings[self.settingKey])
+    
+    def __call__(self):
+        return self.setting
+

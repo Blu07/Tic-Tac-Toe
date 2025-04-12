@@ -1,9 +1,10 @@
 import pygame
 from pygame.math import Vector2
+from pygame.font import Font
 import sys
 
-from snakeGame.ui_elements import Button, Text
-from snakeGame.setup import FPS, GO_BG_COLOR, GO_TITLE, GO_TITLE_COLOR, GO_TITLE_FONT, GO_RESTART_BUTTON_TEXT, GO_RESTART_BUTTON_FONT, GO_RESTART_BUTTON_COLOR, GO_RESTART_BUTTON_TEXT_COLOR, GO_RESTART_BUTTON_PADDING
+from common.ui_elements import Button, Text
+from common.setup import FPS, CENTER
 
 def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -> bool:
     """
@@ -16,20 +17,30 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -
     - bool: False when the game over loop has ended.
     """
     
-    GO_TITLE_CENTER = Vector2(window.get_width() // 2, 100)
-    GO_RESTART_BUTTON_CENTER = Vector2(window.get_width() // 2, window.get_height() // 2)
 
-    
     # Initialize UI Elements
-    titleText = Text(window, GO_TITLE_FONT, GO_TITLE, GO_TITLE_COLOR, center=GO_TITLE_CENTER)
-    restartButton = Button(window, GO_RESTART_BUTTON_TEXT, GO_RESTART_BUTTON_FONT, GO_RESTART_BUTTON_COLOR, GO_RESTART_BUTTON_TEXT_COLOR, center=GO_RESTART_BUTTON_CENTER, padding=GO_RESTART_BUTTON_PADDING)
+    titleText = Text(
+        window,
+        "Game Over!",
+        font = Font(None, 74),
+        color = "brown3",
+        center = CENTER + Vector2(0, -200)
+    )
+    
+    restartButton = Button(
+        window,
+        "Click to Restart Game",
+        font = Font(None, 24),
+        bgColor="white",
+        textColor = (0, 128, 255),
+        center = CENTER,
+        padding = Vector2(50, 50)
+    )
 
     
     # Game Over Screen Loop
     while loop:
-        
         events = pygame.event.get()
-        
         for event in events:
             match event.type:
                 case pygame.QUIT:
@@ -37,9 +48,7 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -
                     sys.exit()
                     
                 case pygame.MOUSEBUTTONDOWN:
-                    pass
-                    mousePos = Vector2(pygame.mouse.get_pos())
-                    if restartButton.pressed(mousePos):
+                    if restartButton.isPressed(event.pos):
                         loop = False
                 
                 case pygame.KEYDOWN:

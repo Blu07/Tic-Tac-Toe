@@ -3,10 +3,14 @@ import numpy as np
 import pygame
 from pygame import Vector2
 from copy import copy, deepcopy
+from common.utils import vec2Deg, pos2IntXY
 
-from .setup import GHOST_SHAPE_SIZE_FACTOR, DEPTH
+from time import sleep
+
+from .setup import SHAPE_SIZE_FACTOR, DEPTH, TEXTURE_PACK, AI_PERFORM_DELAY
 from common.grid import Grid
-
+from common.utils import distanceMap, loadTextures
+from common.tileSprite import TileSprite
 
 class Board:
     
@@ -17,18 +21,26 @@ class Board:
     
     dirVectors = [r1, r2, r3, r4]
     
-    def __init__(self, grid: Grid, texturePack, winLength: int = 3, startPlayer: int = 1, combinations: list[list[int]] = None, state = None):
+    DELAY = 1000 # Delay in milliseconds
+    
+    lastMoveTime = 0
+    
+    def __init__(self, grid: Grid, winLength: int = 3, startPlayer: int = 1, state = None):
         
         self.grid = grid 
         self.winLength = winLength
-        self.combinations = combinations
         self.startPlayer = startPlayer
-        
-        self.texturePack = texturePack
+                
+        self.textures = loadTextures(
+            texturePack=TEXTURE_PACK,
+            size=grid.cellSizePX
+        )
         
         # Initialize the board with all zeros with correct dimensions
         self.state = [ [0] * grid.numCellsX for _ in range(grid.numCellsY) ] if state is None else state
         
+        self.tileSpriteList = []
+
 
     def checkHasWon(self, action: Vector2, player: int, state = None):
         """Check if the player has won the game by performing the action.
@@ -84,16 +96,22 @@ class Board:
         Returns:
         - bool: True if the action was successful, False otherwise.
         """
-        
-
-            
-        success = False # Change to true if the action was successful
+                
+        success = False # Changes to true if the action was successful
         
         valueAtCell = self.getValAtPos(action, self.state)
         outOfBounds = self.grid.isOutOfBounds(action)
         
         if not outOfBounds and valueAtCell == 0:
             self.state[int(action.y)][int(action.x)] = player # Set the value at the correct index
+            tileSprite = TileSprite(
+                self.grid,
+                self.textures,
+                style = "X" if player == 1 else "O",
+                pos = Vector2([action.x, action.y])
+            )
+            
+            self.tileSpriteList.append(tileSprite)
             success = True
         
         return success # Return whether the action was successful or not
@@ -117,7 +135,10 @@ class Board:
             # If there is a blocking move, return that action
             # If there is a move that creates a fork, return that action
             # If there is a move where the opponent can create a fork, return that action
-            
+        
+        
+        
+        
         
         
         if state is None: state = self.state
@@ -134,8 +155,25 @@ class Board:
                 
                 
         
-                
+        # Sort the actions based on distance from any previous actions
+        # Only sort if the board has more than 1 empty cell
+        # sortedActions = []
+        # distMap = distanceMap(state)
         
+        # for i in range(1, max(np.array(distMap).flatten())+1):
+        #     actionsOfI = []
+        #     for y, row in enumerate(distMap):
+        #         for x, val in enumerate(row):
+        #             if val == 0: continue
+                
+        #             if val == i:
+        #                 actionsOfI.append(Vector2([x, y]))
+        
+        
+        #     sortedActions.extend(actionsOfI)
+
+            
+        # return sortedActions
         return actions
     
     
@@ -155,20 +193,12 @@ class Board:
     
     
     
-    def Result(self, state, action, playerVal):
+    def result(self, state, action, playerVal):
         
-        newState = []
-        for y, yList in enumerate(state):
-            newList = []
-            for x, val in enumerate(yList):
-                if y == action.y and x == action.x:
-                    newList.append(playerVal)
-                else:
-                    newList.append(val)
-                    
-            newState.append(newList)
-        
+        newState = deepcopy(state)
+        newState[int(action.y)][int(action.x)] = playerVal
         return newState
+        
     
           
     def minimax(self, state, player, depth=10, alpha=-np.inf, beta=np.inf, root=False):
@@ -178,12 +208,12 @@ class Board:
         actions = self.getActions(state)
         for action in actions:
 
-            checkState = self.Result(state, action, player)
+            checkState = self.result(state, action, player)
                 
             immidiateWin = self.checkHasWon(action, player, checkState)
             isDraw = self.isStateFull(checkState)
             
-            # Check:
+            # Checking:
             # 1. the player has won,
             # 2. the game is a draw,
             # 3. the depth is 0,
@@ -212,48 +242,12 @@ class Board:
         else: return bestValue # Return the value of the state because minimax was called at a lower level
             
     
-    def getBestAction(self, state, player, depth=10):        
-        state = deepcopy(state)
-        
-        bestAction = self.minimax(state, player, depth=depth, root=True)
-        print(bestAction)
-        return bestAction
-
-        # bestValue = -player * np.inf  # Opposite of player's goal
-        # bestAction = None
-        # bestActions = []
-        
-        # values = []
-        
-        # otherPlayer = -player
-
-        # actions = self.getActions(state)
-        # for action in actions:
-        #     newState = self.Result(state, action, player)
-            
-        #     if self.checkHasWon(action, player, newState): return action
-        #     if self.isStateFull(newState): return action
-            
-        #     value, bestActions = self.minimax(newState, otherPlayer, depth=depth)
-        #     print(bestActions)
-        #     if player == 1:     bestValue = max(bestValue, value)
-        #     elif player == -1:  bestValue = min(bestValue, value)
-            
-        #     values.append(value)
-
-        #     bestAction = actions[values.index(bestValue)]
-        
-        
-        # return bestAction
-
-
-
 
     def evaluateState(self, state):
-
-        # evaluationState = np.array([[ 1 if v == 0 else v for v in yList] for yList in state]) # Convert 0's to 1's to give 1 point score where empty
+        # TODO: Go through each cell. Give the cell points for each line it is part of, but squared. 3 long line -> 3^2 = 9 points.
+        
         evaluationState = np.array(state)
-        evaluated = evaluationState * self.combinations
+        evaluated = evaluationState * 2 # give points based on position on boarg.
         score = sum(evaluated.flatten())
         
         return score
@@ -261,50 +255,51 @@ class Board:
     
     
     def draw(self, window: pygame.Surface):
-        for y, yList in enumerate(self.state):
-            for x, val in enumerate(yList):
-                if val == 0: continue
+        for tile in self.tileSpriteList:
+            tile.draw(window)
                 
-                windowPos = self.grid.getWindowPosFromGridPos(Vector2([x, y])) + Vector2([self.grid.cellSizePX//2]*2)
-                pygame.draw.circle(window, self.texturePack[val], windowPos, self.grid.cellSizePX // 2 - 10)
-    
     
     def __str__(self):
         return str(self.state)
     
     
     def print(self):
-        for yList in self.state:
-            print(yList)
+        for row in self.state:
+            print(row)
 
 
 
 
+        
+def HumanPlayer(event, currentPlayer, grid: Grid, board: Board):
+        
+        action = grid.getGridPosFromWindowPos(Vector2(event.pos))
+        
+        validMove = board.performAction(action, currentPlayer)
+        if not validMove: return False, False
 
-
-
-
-class GhostShape:
-    pos = Vector2(0, 0)
-    
-    def __init__(self, cellSizePX, initPlayer, texturePack):
-        self.cellSizePX = cellSizePX * GHOST_SHAPE_SIZE_FACTOR
-        self.color = "blue"
-        self.player = initPlayer
-        self.texturePack = texturePack
+        didWin = board.checkHasWon(action, currentPlayer)
+        
+        return validMove, didWin
         
         
-    def setPos(self, newPos: Vector2):
-        self.pos = newPos
     
-    def getRect(self):
-        windowX = self.pos.x - self.cellSizePX // 2
-        windowY = self.pos.y - self.cellSizePX // 2
-        return pygame.Rect(windowX, windowY, self.cellSizePX, self.cellSizePX)
-    
-    def draw(self, window: pygame.Surface):
-        pygame.draw.circle(window, self.texturePack[self.player], self.pos, self.cellSizePX * GHOST_SHAPE_SIZE_FACTOR / 2)
 
+def AIPlayer(board: Board, playerValue: int, lastMoveTime: int = 0):
+
+    bestAction = board.minimax(board.state, playerValue, depth=DEPTH, root=True)
+    if bestAction is None: return False, None
+    
+    currentTime = pygame.time.get_ticks()
+    if currentTime - lastMoveTime < AI_PERFORM_DELAY:
+        # Add a delay so that the time between each action made by an AI is at least AI_PERFORM_DELAY
+        sleep((AI_PERFORM_DELAY - (currentTime - lastMoveTime))/1000)
+        
+    
+    validMove = board.performAction(bestAction, playerValue)
+    didWin = board.checkHasWon(bestAction, playerValue)
+    
+    return validMove, didWin
 
 
 def generateCombinationMap(xCells, yCells, winLength):
@@ -367,7 +362,7 @@ def generateCombinationMap(xCells, yCells, winLength):
 
 
 if __name__ == '__main__':
-    
+    # Testing what depth takes an acceptable time based on the size of the board and win length
     startPlayer = -1
     
     # state = [
@@ -389,7 +384,7 @@ if __name__ == '__main__':
     cellSize = 200 
             
     grid = Grid(0, 0, cellSize, xCells, yCells)
-    board = Board(grid, None, 3, startPlayer, totalCombinations)
+    board = Board(grid, 3, startPlayer, totalCombinations)
     
     # Depth at sizes that are fast enough
     # X, Y, WinLen: Depth

@@ -5,10 +5,10 @@ import os
 
 from common.setup import TEXTURES_FOLDER
 from common.grid import Grid
-
-from snakeGame.ui_elements import TileSprite
+from common.tileSprite import TileSprite
 from common.utils import pos2IntXY, loadTextures, getRelativeTurn, vec2Deg
-from snakeGame.setup import RANDOM_FOOD_MAX_ATTEMPTS, SNAKE_TEXTURE_PACK, FOOD_TEXTURE_PACK, HOTSPOT_TEXTURE_PACK
+
+from snakeGame.setup import SNAKE_TEXTURE_PACK, FOOD_TEXTURE_PACK, HOTSPOT_TEXTURE_PACK
 
 class Food(): ...
 class HotSpots(): ...
@@ -281,7 +281,7 @@ class HotSpotList():
 
 
 class Snake():
-    def __init__(self, screen, grid: Grid, foodList: FoodList, hotSpotList: HotSpotList, startX: int = 2, startY: int = 2, startLen: int = 3, initDirection: Vector2 = Vector2(1, 0), color: str = "blue", pointsPerFood: int = 1):
+    def __init__(self, screen, grid: Grid, foodList: FoodList, hotSpotList: HotSpotList, startX: int = 2, startY: int = 2, startLen: int = 3, initDirection: Vector2 = Vector2(1, 0), pointsPerFood: int = 1):
         """
         Initializes a Snake object.
         Parameters:
@@ -313,7 +313,6 @@ class Snake():
         # Snake Related
         self.len = startLen
         self.direction = initDirection
-        self.color = color
         self.score = startLen
         self.pointsPerFood = pointsPerFood
         
