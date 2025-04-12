@@ -9,7 +9,7 @@ from TicTacToeGame.setup import HUMAN_THINKING_TEXT, AI_THINKING_TEXT
 from TicTacToeGame.structs import Grid, Board, AIPlayer, HumanPlayer
 
 
-    
+
 
 def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, initPlayer: int, players, clock: pygame.time.Clock) -> bool:
     """
@@ -41,7 +41,7 @@ def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, initPlayer: i
         center = Vector2(window.get_width() // 2, 140)
     )
     
-    AICooldownFrames = 5 # Hard wait for AI to start. Used to ensure screen draws before AI starts thinking 
+    AICooldownFrames = 5 # Hard wait for AI to start. Used to ensure screen is drawn before AI starts thinking 
     
     winner = None
     terminal = False
@@ -75,15 +75,16 @@ def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, initPlayer: i
         
         # If a valid move was made this frame, check for win or draw
         if validMove:
-            # Draw
-            if board.isStateFull():
-                terminal = True
-                winner = 0
 
             # Win
-            elif didWin:
+            if didWin:
                 winner = currentPlayer
                 terminal = True
+            
+            # Draw
+            elif board.isStateFull():
+                terminal = True
+                winner = 0
             
             # Nothing, continue game
             else:
@@ -97,8 +98,9 @@ def gameplayLoop(window: pygame.Surface, grid: Grid, board: Board, initPlayer: i
         # Render the screen before processing events, so that
         window.fill(GAMEPLAY_BG_COLOR)
 
-        currentPlayerText.draw()
-        currentPlayerDescription.draw()
+        if not terminal:
+            currentPlayerText.draw()
+            currentPlayerDescription.draw()
         
         grid.draw(window)
         board.draw(window)

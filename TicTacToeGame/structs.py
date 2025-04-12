@@ -1,29 +1,25 @@
-from pprint import pprint
+
 import numpy as np
 import pygame
 from pygame import Vector2
-from copy import copy, deepcopy
-from common.utils import vec2Deg, pos2IntXY
+from copy import deepcopy
 
 from time import sleep
 
 from .setup import SHAPE_SIZE_FACTOR, DEPTH, TEXTURE_PACK, AI_PERFORM_DELAY
 from common.grid import Grid
-from common.utils import distanceMap, loadTextures
+from common.utils import loadTextures
 from common.tileSprite import TileSprite
 
 class Board:
     
-    r1 = Vector2([-1, -1]) # Horizontal up left
-    r2 = Vector2([0, -1]) # Up
-    r3 = Vector2([1, -1]) # Horizontal up right
-    r4 = Vector2([1, 0]) # right
+    # Searching directions with relative vectors
+    HUL = Vector2([-1, -1]) # Horizontal Up Left
+    U = Vector2([0, -1]) # Up
+    HUR = Vector2([1, -1]) # Horizontal Up Right
+    R = Vector2([1, 0]) # Right
     
-    dirVectors = [r1, r2, r3, r4]
-    
-    DELAY = 1000 # Delay in milliseconds
-    
-    lastMoveTime = 0
+    dirVectors = [HUL, U, HUR, R]
     
     def __init__(self, grid: Grid, winLength: int = 3, startPlayer: int = 1, state = None):
         
@@ -97,7 +93,7 @@ class Board:
         - bool: True if the action was successful, False otherwise.
         """
                 
-        success = False # Changes to true if the action was successful
+        success = False # Changes to true if the action was valid
         
         valueAtCell = self.getValAtPos(action, self.state)
         outOfBounds = self.grid.isOutOfBounds(action)
@@ -108,13 +104,14 @@ class Board:
                 self.grid,
                 self.textures,
                 style = "X" if player == 1 else "O",
-                pos = Vector2([action.x, action.y])
+                pos = Vector2([action.x, action.y]),
+                sizeFactor = SHAPE_SIZE_FACTOR
             )
             
             self.tileSpriteList.append(tileSprite)
             success = True
         
-        return success # Return whether the action was successful or not
+        return success # Return whether the action is valid
     
     
     
@@ -129,7 +126,7 @@ class Board:
         # maxX = xCells // 2 + 1 (include middle column if xCells is odd)
         # maxY = yCells // 2 + 1 (include middle row)
         
-        # TODO: Sort the list of actions based on win conditions
+        # TODO (or not): Sort the list of actions based on win conditions
             # If the player can win, return that action
             # If the opponent can win, return that action
             # If there is a blocking move, return that action
@@ -384,7 +381,7 @@ if __name__ == '__main__':
     cellSize = 200 
             
     grid = Grid(0, 0, cellSize, xCells, yCells)
-    board = Board(grid, 3, startPlayer, totalCombinations)
+    board = Board(grid, 3, startPlayer)
     
     # Depth at sizes that are fast enough
     # X, Y, WinLen: Depth

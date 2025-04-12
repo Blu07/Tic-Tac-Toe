@@ -1,12 +1,12 @@
 import pygame
 from pygame.math import Vector2
+from pygame.font import Font
 import sys
 
 from common.ui_elements import Button, Text
 from common.setup import FPS, CENTER
 
-
-def winLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -> bool:
+def gameOverLoop(window: pygame.Surface, clock: pygame.time.Clock, result: str) -> bool:
     """
     Game over loop that handles events and renders the game over screen.
     Parameters:
@@ -17,32 +17,34 @@ def winLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -> boo
     - bool: False when the game over loop has ended.
     """
     
+    title = "Game Over!" if result == "game_over" else "You Won!"
     
+
     # Initialize UI Elements
     titleText = Text(
         window,
-        "You Won!",
-        font = pygame.font.Font(None, 74),
-        color = "brown3",
-        center = CENTER + Vector2(0, -200)
+        text = title,
+        font = Font(None, 100),
+        color = "blue",
+        center = Vector2(CENTER.x, 100)
     )
     
     restartButton = Button(
         window,
         "Click to Restart Game",
-        font = pygame.font.Font(None, 24),
+        font = Font(None, 24),
         bgColor = (0, 128, 255),
-        textColor = "white",
+        textColor="white",
         center = CENTER,
-        padding = Vector2(50, 30)
+        padding = Vector2(20, 20),
+        borderRadius = 10
     )
 
     
     # Game Over Screen Loop
+    loop = True
     while loop:
-        
         events = pygame.event.get()
-        
         for event in events:
             match event.type:
                 case pygame.QUIT:
@@ -70,7 +72,3 @@ def winLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock) -> boo
     
         # Cap the frame rate to FPS
         clock.tick(FPS)
-
-
-    # Return False when startLoop has ended (pressed play etc.) 
-    return False

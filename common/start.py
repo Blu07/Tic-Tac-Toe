@@ -24,7 +24,7 @@ def startScreenLoop(window, clock):
     titleText = Text(
         window,
         "Welcome!",
-        font = Font(None, 60),
+        font = Font(None, 100),
         color = "brown3",
         center = CENTER + Vector2(0, -200)
     )
@@ -39,13 +39,14 @@ def startScreenLoop(window, clock):
     
     
     # Initialize Buttons
-    buttonFont = Font(None, 24)
+    buttonFont = Font(None, 36)
     buttonTextColor = "white"
     buttonColor = (0, 128, 255)
-    buttonPadding = Vector2(50, 30)
+    buttonPadding = Vector2(20, 20)
+    buttonBorderRadius = 10
 
-    TTTButton = Button(window, "Tic Tac Toe", buttonFont, buttonColor, buttonTextColor, CENTER + Vector2(75, 0), buttonPadding)
-    SnakeButton = Button(window, "Snake", buttonFont, buttonColor, buttonTextColor, CENTER + Vector2(-75, 0), buttonPadding)
+    TTTButton = Button(window, "Tic Tac Toe", buttonFont, buttonColor, buttonTextColor, CENTER + Vector2(75, 0), buttonPadding, borderRadius=buttonBorderRadius)
+    SnakeButton = Button(window, "Snake", buttonFont, buttonColor, buttonTextColor, CENTER + Vector2(-75, 0), buttonPadding, borderRadius=buttonBorderRadius)
     
     
     # Start Screen Loop    

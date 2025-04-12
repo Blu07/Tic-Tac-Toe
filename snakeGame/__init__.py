@@ -1,5 +1,5 @@
 # Folders
-import snakeGame.loops
+from .loops import gameplayLoop, gameOverLoop
+from .main import mainSnakeLoop
 
-
-__all__ = ["loops", "structs", "setup"]
+__all__ = ["gameplayLoop", "gameOverLoop", "structs", "setup", "mainSnakeLoop"]

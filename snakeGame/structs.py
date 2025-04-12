@@ -281,7 +281,10 @@ class HotSpotList():
 
 
 class Snake():
-    def __init__(self, screen, grid: Grid, foodList: FoodList, hotSpotList: HotSpotList, startX: int = 2, startY: int = 2, startLen: int = 3, initDirection: Vector2 = Vector2(1, 0), pointsPerFood: int = 1):
+    
+    direction = Vector2(1, 0) # Starting direction is right
+    
+    def __init__(self, screen, grid: Grid, foodList: FoodList, hotSpotList: HotSpotList, startX: int = 2, startY: int = 2, startLen: int = 3, pointsPerFood: int = 1):
         """
         Initializes a Snake object.
         Parameters:
@@ -312,7 +315,6 @@ class Snake():
         
         # Snake Related
         self.len = startLen
-        self.direction = initDirection
         self.score = startLen
         self.pointsPerFood = pointsPerFood
         
@@ -325,8 +327,8 @@ class Snake():
         # Generate snake with length of startLen
         # Add snakeTiles from the back of the snake, and forward: Snake.addSnakeTile() works this way
         self.snakeList: list = []
-        for i in range(startLen-1, 0, -1):
-            pos = self.pos - self.direction*i        
+        for i in range(startLen - 1, 0, -1):
+            pos = self.pos - self.direction*i
             self.addSnakeTile(pos, direction=self.direction, style="straight")
             
         # The head
@@ -345,6 +347,7 @@ class Snake():
         Returns:
             None
         """
+        
         
         rotation = vec2Deg(direction)
         snakeTile = TileSprite(grid=self.grid, pos=pos, textures=self.textures, rotation=rotation, style=style)
@@ -465,8 +468,7 @@ class Snake():
         if isFoodPos:
             didEat = True
             self.foodList.removeAtPos(nextPos)
-            for _ in range(50):
-                won = not self.foodList.newRandomFood(self, self.hotSpotList, invalidPositions=[nextPos])
+            won = not self.foodList.newRandomFood(self, self.hotSpotList, invalidPositions=[nextPos])
             self.score += self.pointsPerFood
 
 

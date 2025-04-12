@@ -5,11 +5,9 @@ from copy import deepcopy
 from common.grid import Grid
 from common.setup import WINDOW_WIDTH, WINDOW_HEIGHT, GRID_BORDER_WIDTH, GRID_PADDING_LEFT, GRID_PADDING_RIGHT, GRID_PADDING_TOP, GRID_PADDING_BOTTOM
 
-from ..structs import FoodList, Snake, HotSpotList
-from .game_over import gameOverLoop
-from .gameplay import gameplayLoop
-from .win import winLoop
-from ..setup import INIT_SETTINGS, INIT_PLAYER_X, INIT_PLAYER_Y, INIT_LENGTH
+from .structs import FoodList, Snake, HotSpotList
+from .loops import gameplayLoop, gameOverLoop, settingsLoop
+from .setup import INIT_SETTINGS, INIT_PLAYER_X, INIT_PLAYER_Y, INIT_LENGTH
 
 
 def mainSnakeLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
@@ -20,19 +18,27 @@ def mainSnakeLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
         clock (pygame.time.Clock): The game clock object.
     """
     
-    pygame.display.set_caption("Snake")
-    
+    settings = deepcopy(INIT_SETTINGS)
 
     # Main Game Loop
     while True:
         
         # Set up settings
-        # settings = setSettings(window, clock) # TODO: Implement settings screen
-        # pygame.display.set_caption("Playing Snake")
+        settings, navigation = settingsLoop(window, clock, settings)
         
-        settings = deepcopy(INIT_SETTINGS)
+        if navigation == "menu":
+            return # Return to main menu
+        
+        
+        pygame.display.set_caption("Playing Snake")
+        
         numCellsX = settings['grid_size_x']
         numCellsY = settings['grid_size_y']
+        
+        initPlayerX = numCellsX // 2
+        initPlayerY = numCellsY // 2
+        
+        initLength = min(initPlayerX+1, INIT_LENGTH)
 
         cellSizePX = min(
             (WINDOW_WIDTH - GRID_PADDING_RIGHT - GRID_PADDING_LEFT) // numCellsX,
@@ -43,11 +49,10 @@ def mainSnakeLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
         grid = Grid(GRID_PADDING_LEFT, GRID_PADDING_TOP, numCellsX, numCellsY, cellSizePX)
         foodList = FoodList(window, grid)
         hotSpotList = HotSpotList(window, grid, threshold=3)
-        snake = Snake(window, grid, foodList, hotSpotList, INIT_PLAYER_X, INIT_PLAYER_Y, INIT_LENGTH)
+        snake = Snake(window, grid, foodList, hotSpotList, initPlayerX, initPlayerY, initLength)
         
         # Show Screens
-        won, died = gameplayLoop(window, True, snake, grid, foodList, hotSpotList, clock)
+        result = gameplayLoop(window, snake, grid, foodList, hotSpotList, clock)
         
-        if won: winLoop(window, True, clock)
-        elif died: gameOverLoop(window, True, clock)
+        gameOverLoop(window, clock, result)
 

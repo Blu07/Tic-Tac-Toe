@@ -1,8 +1,7 @@
-from .game_over import gameOverLoop
+from .gameOver import gameOverLoop
 from .gameplay import gameplayLoop
-# from .start import startScreenLoop
-# from .pause import pauseLoop
+from .settings import settingsLoop
 
-__all__ = ["gameOverLoop", "gameplayLoop"]
-# __all__ = ["gameOverLoop", "gameplayLoop", "startScreenLoop", "pauseLoop"]
+
+__all__ = ["gameOverLoop", "gameplayLoop", "settingsLoop"]
 

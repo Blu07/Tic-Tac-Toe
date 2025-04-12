@@ -1,14 +1,13 @@
 import pygame
-from common.grid import Grid
 
 from copy import deepcopy
 
+from common.grid import Grid
 from common.setup import WINDOW_WIDTH, WINDOW_HEIGHT, GRID_BORDER_WIDTH, GRID_PADDING_LEFT, GRID_PADDING_RIGHT, GRID_PADDING_TOP, GRID_PADDING_BOTTOM
-from TicTacToeGame.setup import INIT_SETTINGS
-from TicTacToeGame.structs import Board
-from .game_over import gameOverLoop
-from .gameplay import gameplayLoop
-from .settings import setSettings
+
+from .structs import Board
+from .loops import gameOverLoop, gameplayLoop, settingsLoop
+from .setup import INIT_SETTINGS
 
 
 def mainTTTLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
@@ -25,7 +24,9 @@ def mainTTTLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
     while True:
         
         # Set up settings
-        settings = setSettings(window, clock, initSettings=settings)
+        settings, navigation = settingsLoop(window, clock, initSettings=settings)
+        if navigation == "menu":
+            return
 
         pygame.display.set_caption("Playing Tic Tac Toe")
         

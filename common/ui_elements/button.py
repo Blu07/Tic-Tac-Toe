@@ -4,7 +4,7 @@ from pygame.math import Vector2
 from .text import Text
 
 class Button:
-    def __init__(self, screen, text, font, bgColor, textColor, center=None, padding: Vector2 = None, width: int = None, height: int = None):
+    def __init__(self, screen, text, font, bgColor, textColor, center=None, padding: Vector2 = None, width: int = None, height: int = None, borderRadius: int = 0):
         """
         Initializes a Button object. Draws arectangle with text on top of it.
         
@@ -24,6 +24,7 @@ class Button:
         self.font = font
         self.bgColor = bgColor
         self.textColor = textColor
+        self.borderRadius = borderRadius
         
 
         # Create a Text object to display the text on the button
@@ -44,7 +45,7 @@ class Button:
         if padding:
             width += padding.x
             height += padding.y
-     
+
         self.rect = pygame.Rect(center.x - width // 2, center.y - height // 2, width, height) # find the top left corner of the rectangle based on the center and dimensions
     
     
@@ -52,7 +53,7 @@ class Button:
         """Draw the button rectangle and the text.
         """
         # Draw the button rectangle
-        pygame.draw.rect(self.screen, self.bgColor, self.rect)
+        pygame.draw.rect(self.screen, self.bgColor, self.rect, border_radius=self.borderRadius)
         # Draw the text on top of the button
         self.text.draw()
         
@@ -64,8 +65,8 @@ class Button:
 
 
 class SettingButton(Button):
-    def __init__(self, window, text, font, color, textColor, center, padding, clickFunc,  settingKey, settingText):
-        super().__init__(window, text, font, color, textColor, center=center, padding=padding)
+    def __init__(self, window, text, font, color, textColor, center, padding, borderRadius, clickFunc, settingKey, settingText):
+        super().__init__(window, text, font, color, textColor, center=center, padding=padding, borderRadius=borderRadius)
         self.clickFunc = clickFunc
         self.settingText = settingText
         self.settingKey = settingKey

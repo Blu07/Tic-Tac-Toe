@@ -48,12 +48,11 @@ class Text:
 
 
 
-class SettingText(Text):
+class LabelText(Text):
     def __init__(self, window, font, label, initValue, color, center):
         self.label = label
         self.value = initValue
         text = f"{label}: {initValue}"
-        
         super().__init__(window, text, font, color, center=center)
     
     def updateValue(self, newValue):

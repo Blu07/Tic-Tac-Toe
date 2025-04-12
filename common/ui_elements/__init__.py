@@ -1,5 +1,4 @@
 from .button import Button, SettingButton
-from .score import ScoreText
-from .text import Text, SettingText
+from .text import Text, LabelText
 
-__all__ = ["Button", "ScoreText", "Text", "SettingrText", "SettingButton"]
+__all__ = ["Button", "ScoreText", "Text", "LabelText", "SettingButton"]

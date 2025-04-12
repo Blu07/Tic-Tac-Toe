@@ -1,7 +1,6 @@
-from .main import mainSnakeLoop
-from .game_over import gameOverLoop
+from .gameOver import gameOverLoop
 from .gameplay import gameplayLoop
-from .win import winLoop
+from .settings import settingsLoop
 
-__all__ = ["mainSnakeLoop", "gameOverLoop", "gameplayLoop", "winLoop"]
+__all__ = ["gameOverLoop", "gameplayLoop", "settingsLoop"]
 

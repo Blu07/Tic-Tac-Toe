@@ -18,22 +18,25 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock, w
     """
     
 
+
+
     if winner == 0:
-        titleText = "It's a draw!"
+        title = "It's a draw!"
     else:
         player = "X" if winner == 1 else "O"
-        titleText = f"{player} won!"
-
-    pygame.display.set_caption(titleText)
-
+        title = f"{player} won!"
+        
+        
+        
+    pygame.display.set_caption(title)
     
     # Initialize UI Elements
     titleText = Text(
         window,
-        "You Died!",
+        text = title,
         font = Font(None, 100),
         color = "blue",
-        center = CENTER + Vector2(0, -100)
+        center = Vector2(CENTER.x, 100)
     )
     
     restartButton = Button(
@@ -43,7 +46,8 @@ def gameOverLoop(window: pygame.Surface, loop: bool, clock: pygame.time.Clock, w
         bgColor = (0, 128, 255),
         textColor = "white",
         center = CENTER,
-        padding = Vector2(50, 30)
+        padding = Vector2(50, 30),
+        borderRadius = 10
     )
 
     

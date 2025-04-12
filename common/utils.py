@@ -211,7 +211,7 @@ def distanceMap(map: list[list[int]]):
     Returns:
         list[list[int]]: A 2D array of cells with integer values representing the distance from each cell to the nearest obstacle cell.
     """
-    print("used distMap")
+
     # Create a new map with the same size as the input map, initialized with infinity. The algortihm chooses lower values
     # for the cells, so infinity will always be replaced.
     distMap = [[float('inf') for _ in range(len(map[0]))] for _ in range(len(map))]
