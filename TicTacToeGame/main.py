@@ -43,8 +43,7 @@ def mainTTTLoop(window: pygame.Surface, clock: pygame.time.Clock) -> None:
             (WINDOW_WIDTH - GRID_PADDING_RIGHT - GRID_PADDING_LEFT) // numCellsX,
             (WINDOW_HEIGHT - GRID_PADDING_TOP - GRID_PADDING_BOTTOM) // numCellsY
         )
-        
-        # totalCombinations = generateCombinationMap(xCells=numCellsX, yCells=numCellsY, winLength=winLength)
+    
         
         windowPosX = (WINDOW_WIDTH - numCellsX * cellSizePX + 2 * GRID_BORDER_WIDTH) / 2 # Center the grid on the window in the X direction
         grid = Grid(windowPosX, GRID_PADDING_TOP, numCellsX, numCellsY, cellSizePX)

@@ -8,8 +8,6 @@ INIT_SETTINGS = {
     "grid_size_y": 10,
 }
 
-INIT_PLAYER_X: int = INIT_SETTINGS["grid_size_x"] // 2
-INIT_PLAYER_Y: int = INIT_SETTINGS["grid_size_y"] // 2
 INIT_LENGTH: int = 5
 
 

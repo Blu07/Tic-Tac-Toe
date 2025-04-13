@@ -131,8 +131,5 @@ def settingsLoop(window, clock, initSettings):
         
         clock.tick(FPS)
     
-    
-    print(f"Settings: {settings}")
-    print(f"Navigation: {navigation}")
 
     return settings, navigation

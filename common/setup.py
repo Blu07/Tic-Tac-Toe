@@ -22,7 +22,7 @@ TEXTURES_FOLDER: str = "_textures"
 
 # GRID
 GRID_COLORS = ["burlywood2", "burlywood3"]
-GRID_BORDER_WIDTH: int = 4 #px
+GRID_BORDER_WIDTH = 4 #px
 GRID_BORDER_COLOR: str = "black"
 
 
@@ -31,4 +31,3 @@ GRID_PADDING_RIGHT = 100
 GRID_PADDING_TOP = 200
 GRID_PADDING_BOTTOM = 100
 
-GRID_BORDER_WIDTH = 4

@@ -11,6 +11,8 @@ from common.grid import Grid
 from common.utils import loadTextures
 from common.tileSprite import TileSprite
 
+INF = float('inf')
+
 class Board:
     
     # Searching directions with relative vectors
@@ -50,7 +52,7 @@ class Board:
         """
         
         if state is None: state = self.state
-        
+
         for i, r in enumerate(self.dirVectors):
             # TODO: Use i to calculate if there is any possibility for the diagonals to be valid (i=0, i=2) in the corners.
             # Possible early return to save computation time over a small arithmetic calculation
@@ -116,28 +118,17 @@ class Board:
     
     
     def getActions(self, state = None) -> list[Vector2]:
-        # Return a list of actions of Vector2([x, y]) pairs
-        
-        # TODO: If the board is symmetrical, only return actions that result in unique new states
-        ## First case: board is empty
-        
-        # Symmetrical by mid of x axis and mid of y axis (x and y axes might not be equal length)
-        
-        # maxX = xCells // 2 + 1 (include middle column if xCells is odd)
-        # maxY = yCells // 2 + 1 (include middle row)
-        
-        # TODO (or not): Sort the list of actions based on win conditions
-            # If the player can win, return that action
-            # If the opponent can win, return that action
-            # If there is a blocking move, return that action
-            # If there is a move that creates a fork, return that action
-            # If there is a move where the opponent can create a fork, return that action
-        
-        
-        
-        
-        
-        
+        """Retrieve a list of valid actions for the current or given game state.
+        Args:
+            state (list[list[int]], optional): The current game state represented 
+                as a 2D list of integers. Each integer represents a cell in the 
+                game grid. Defaults to None, in which case the method uses the 
+                instance's current state.
+        Returns:
+            list[Vector2]: A list of Vector2 objects, where each object represents 
+                the coordinates ([x, y]) of a valid action (empty cell) in the game grid.
+        """
+
         if state is None: state = self.state
         
         actions = []
@@ -147,30 +138,7 @@ class Board:
                 if val == 0:
                     actions.append(Vector2(action))
                 
-                # There is a value at the current position:
-                # store the position and value
                 
-                
-        
-        # Sort the actions based on distance from any previous actions
-        # Only sort if the board has more than 1 empty cell
-        # sortedActions = []
-        # distMap = distanceMap(state)
-        
-        # for i in range(1, max(np.array(distMap).flatten())+1):
-        #     actionsOfI = []
-        #     for y, row in enumerate(distMap):
-        #         for x, val in enumerate(row):
-        #             if val == 0: continue
-                
-        #             if val == i:
-        #                 actionsOfI.append(Vector2([x, y]))
-        
-        
-        #     sortedActions.extend(actionsOfI)
-
-            
-        # return sortedActions
         return actions
     
     
@@ -198,54 +166,99 @@ class Board:
         
     
           
-    def minimax(self, state, player, depth=10, alpha=-np.inf, beta=np.inf, root=False):
-        bestValue = -np.inf * player # The opposite of the player's goal
+    def minimax(self, state, player, depth=10, alpha=-INF, beta=INF, root=False):
+        bestValue = INF * -player # The opposite of the player's goal
         bestAction = None
         
-        actions = self.getActions(state)
-        for action in actions:
-
+        # Loop through all possible moves and evaluate their results
+        for action in self.getActions(state):
             checkState = self.result(state, action, player)
-                
             immidiateWin = self.checkHasWon(action, player, checkState)
             isDraw = self.isStateFull(checkState)
             
-            # Checking:
-            # 1. the player has won,
-            # 2. the game is a draw,
-            # 3. the depth is 0,
-            # 4. the game is not over, continue the search
-            if immidiateWin: bestValue, bestAction = player, action
-            elif isDraw: bestValue, bestAction = 0, action
-            elif depth == 0: bestValue, bestAction = self.evaluateState(checkState), action
+            # Check for terminal states (win, draw, or depth limit)
+            if immidiateWin:
+                bestValue, bestAction = player * INF, action
+                continue
+
+            if isDraw:
+                bestValue, bestAction = 0, action
+                continue
+
+            if depth == 0:
+                bestValue, bestAction = self.evaluateState(checkState), action
+                continue
+            
+            # Recursive minimax call for opponent
+            newValue = self.minimax(state=checkState, player=-player, depth=depth-1, alpha=alpha, beta=beta)
+            
+            isBetter = newValue > bestValue if player == 1 else newValue < bestValue
+            if not isBetter: continue
+            
+            # If this move is better than previous best, update its value
+            bestValue = newValue
+            bestAction = action
+            if player == 1:
+                alpha = max(alpha, newValue)
             else:
-                otherPlayer = -player
-                newValue = self.minimax(state=checkState, player=otherPlayer, depth=depth-1, alpha=alpha, beta=beta)
-                
-                if player == 1 and newValue > bestValue:
-                    bestValue = newValue
-                    bestAction = action
-                    alpha = max(alpha, newValue)
-                    
-                elif player == -1 and newValue < bestValue:
-                    bestValue = newValue
-                    bestAction = action
-                    beta = min(beta, newValue)
-                
-                if beta <= alpha: break
+                beta = min(beta, newValue)
+            
+            if beta <= alpha: break
             
             
         if root: return bestAction # Return the best action because minimax was called at the top level
         else: return bestValue # Return the value of the state because minimax was called at a lower level
             
     
+    
+    
+    def getLengthOfAllLinesThroughPos(self, state, pos: Vector2, value):
+        
+        lines = []
+        
+        for r in self.dirVectors:                     
+            inverted = False # Flag to only invert once
+            equal = True # Store if each checked cell has the same value as the player's value
+            equalCount = 1 # The player has won if this count is the same as winlength
+            
+            checkPos = deepcopy(pos)
+            
+            while equal:
+                checkPos += r # Add the relative direction vector to the current position
+                
+                valueAtCheck = self.getValAtPos(checkPos, state)
+                equal = valueAtCheck == value
+
+                if equal: equalCount += 1
+                else:
+                    if inverted: continue
+                    
+                    # Invert the searching direction and start searching form original position
+                    checkPos = deepcopy(pos)
+                    r *= -1
+                    inverted = True
+                    equal = True
+            
+            lines.append(equalCount)
+                    
+        return lines
+    
+    
 
     def evaluateState(self, state):
-        # TODO: Go through each cell. Give the cell points for each line it is part of, but squared. 3 long line -> 3^2 = 9 points.
-        
-        evaluationState = np.array(state)
-        evaluated = evaluationState * 2 # give points based on position on boarg.
-        score = sum(evaluated.flatten())
+        """ Evaluated the state based on the lengths of all lines on the board. Lengths are wheighted with the square, so longer lines get more points.
+        """ 
+        score = 0
+            
+        for y, row in enumerate(state):
+            for x, val in enumerate(row):
+                if val == 0: continue
+                
+                lengths = self.getLengthOfAllLinesThroughPos(state, Vector2(x, y), val)
+                
+                for v in lengths:
+                    score += v**2 * val # Keep the sign
+                
         
         return score
 
@@ -299,63 +312,6 @@ def AIPlayer(board: Board, playerValue: int, lastMoveTime: int = 0):
     return validMove, didWin
 
 
-def generateCombinationMap(xCells, yCells, winLength):
-    
-
-    combinationsDiagonals: list[list[int]] = []
-    
-    maxDiagonalLength = min(xCells, yCells)
-    maxLength = max(xCells, yCells)
-    
-    for y in range(yCells):
-        yList = []
-        
-        for x in range(xCells):
-            distX = min(x+1, xCells - x)
-            distY = min(y+1, yCells - y)
-            edgeDistance = min(distX, distY) # Distance from the current cell to the edge of the board
-                
-            possibleDiagonalLength = y + x + 1 if x + y + 1 < maxLength else maxLength - (x + y + 1 - maxDiagonalLength)
-            possibleDiagonalLength -= winLength - 1
-            possibleDiagonalLength = max(possibleDiagonalLength, 0)
-            
-            numCombinations = min(possibleDiagonalLength, edgeDistance, maxDiagonalLength, winLength)
-            
-            yList.append(numCombinations)
-        
-        mirrored = yList[::-1]
-        yList = np.array(yList) + np.array(mirrored) # Take the sum of comniations for both diagonals
-        
-        combinationsDiagonals.append(yList)
-    
-
-    combinationsRows: list[list[int]] = []
-    
-    for y in range(yCells):
-        numCombinations = []
-        maxCominations = xCells - winLength + 1
-        for x in range(xCells):
-            distX = min(x+1, xCells - x)
-            
-            numCombinations.append(min(distX, maxCominations, winLength))
-        combinationsRows.append(numCombinations)
-
-    combinationsColumns: list[list[int]] = []
-    
-    for y in range(yCells):
-        numCombinations = []
-        maxCominations = yCells - winLength + 1
-        for x in range(xCells):
-            distY = min(y+1, yCells - y)
-            
-            numCombinations.append(min(distY, maxCominations, winLength))
-        combinationsColumns.append(numCombinations)
-    
-
-    
-    totalCombinations = np.array(combinationsDiagonals) + np.array(combinationsRows) + np.array(combinationsColumns)
-
-    return totalCombinations
 
 
 if __name__ == '__main__':
@@ -374,8 +330,6 @@ if __name__ == '__main__':
     winLength = 3
     depth = 10
     
-    
-    totalCombinations = generateCombinationMap(xCells, yCells, winLength)
 
     
     cellSize = 200 

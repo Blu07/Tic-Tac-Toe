@@ -3,7 +3,6 @@ from pygame.font import Font
 from pygame.math import Vector2
 
 import sys
-import numpy as np
 
 from common.utils import getNextDirection, dir2Vec
 from common.ui_elements import LabelText
@@ -89,7 +88,7 @@ def gameplayLoop(window: pygame.Surface, snake, grid, foodList, hotSpotList, clo
             
             deltaTime -= timeStep
             lastUpdateTime += timeStep
-            gameTPS = np.sqrt(snake.score)
+            gameTPS = snake.score**(1/2)
             
             scoreText.updateValue(snake.score)
             
