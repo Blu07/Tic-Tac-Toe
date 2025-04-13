@@ -37,5 +37,4 @@ pip install pygame
 
 ## ▶️ Run the Game
 ```bash
-python3 main.py  # macOS/Linux
-py main.py       # Windows
+python3 main.py
